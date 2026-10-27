@@ -55,8 +55,15 @@ function chart(history, { w = 300, h = 48, axes = false, digits = 2 } = {}) {
   </svg>`;
 }
 
+// Detalhe técnico do erro fica no tooltip, para não poluir o painel.
 const unavailable = (a) =>
-  `<div class="err">Indisponível no momento. ${esc(a.error || '')}</div>`;
+  `<div class="err" title="${esc(a.error || '')}">Indisponível no momento</div>`;
+
+const SOURCE_LABEL = {
+  brapi: 'brapi', brapiFx: 'brapi', fmp: 'FMP', awesome: 'AwesomeAPI',
+  bcb: 'PTAX · Banco Central', stooq: 'Stooq', demo: 'demonstração',
+};
+const sourceTag = (a) => (a.source ? `<span class="src">Fonte: ${SOURCE_LABEL[a.source] || a.source}</span>` : '');
 
 function renderUsd(c) {
   if (c.price == null) {
@@ -71,7 +78,8 @@ function renderUsd(c) {
       <span class="num ${dir(c.changePct)}">${signed(c.change, 4)} (${signed(c.changePct)}%)</span>
       ${c.high ? `<span>Máx. <span class="num">${fmt(c.high, 4)}</span></span>` : ''}
       ${c.low ? `<span>Mín. <span class="num">${fmt(c.low, 4)}</span></span>` : ''}
-      <span>Últimos ${c.history.length} dias</span>
+      ${c.history.length ? `<span>Últimos ${c.history.length} dias</span>` : ''}
+      ${sourceTag(c)}
     </div>
     ${chart(c.history, { w: 700, h: 140, axes: true, digits: 3 })}`;
 }
@@ -83,7 +91,8 @@ function renderSideFx(list) {
       ${c.price == null ? `<div class="price num">—</div>${unavailable(c)}` : `
       <div class="price num">R$ ${fmt(c.price, 4)}</div>
       <div class="num ${dir(c.changePct)}">${signed(c.changePct)}%</div>
-      ${chart(c.history)}`}
+      ${chart(c.history)}
+      ${sourceTag(c)}`}
     </div>`).join('');
 }
 
@@ -101,7 +110,8 @@ function renderIndices(list) {
       <div class="price num">${fmt(ix.price)}</div>
       ${off ? unavailable(ix) : `
       <div class="num ${dir(ix.changePct)}">${signed(ix.change)} (${signed(ix.changePct)}%)</div>
-      ${chart(ix.history)}`}
+      ${chart(ix.history)}
+      ${sourceTag(ix)}`}
     </article>`;
   }).join('');
 }

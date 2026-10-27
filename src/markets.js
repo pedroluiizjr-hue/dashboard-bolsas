@@ -1,8 +1,13 @@
 import { INDICES, CURRENCIES, CACHE_SECONDS } from './config.js';
-import { fromBrapi, fromFmp, fromAwesome, fromStooq, demo } from './providers.js';
+import {
+  fromBrapi, fromBrapiCurrency, fromFmp, fromAwesome, fromBcb, fromStooq, demo,
+} from './providers.js';
 
 const DEMO = process.env.DEMO === '1';
-const PROVIDERS = { brapi: fromBrapi, fmp: fromFmp, awesome: fromAwesome, stooq: fromStooq };
+const PROVIDERS = {
+  brapi: fromBrapi, brapiFx: fromBrapiCurrency, fmp: fromFmp,
+  awesome: fromAwesome, bcb: fromBcb, stooq: fromStooq,
+};
 
 let cache = { at: 0, payload: null };
 
@@ -24,7 +29,7 @@ async function load(asset) {
 
 async function buildPayload() {
   const [indices, currencies] = await Promise.all([
-    Promise.all(INDICES.map(async ({ sources, ...ix }) => ({ ...ix, ...(await load({ sources, ...ix })) }))),
+    Promise.all(INDICES.filter((ix) => ix.enabled !== false).map(async ({ sources, ...ix }) => ({ ...ix, ...(await load({ sources, ...ix })) }))),
     Promise.all(CURRENCIES.map(async ({ sources, ...c }) => ({ ...c, ...(await load({ sources, ...c })) }))),
   ]);
   return { updatedAt: new Date().toISOString(), indices, currencies };

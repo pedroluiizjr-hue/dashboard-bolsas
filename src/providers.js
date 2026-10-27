@@ -79,6 +79,53 @@ export async function fromAwesome(pair) {
   };
 }
 
+// brapi.dev, câmbio em tempo quase real. Usa o mesmo BRAPI_TOKEN do Ibovespa.
+// O histórico de 30 dias vem do Banco Central (PTAX), que não tem limite para servidores.
+export async function fromBrapiCurrency(pair) {
+  const token = process.env.BRAPI_TOKEN;
+  if (!token) throw new Error('BRAPI_TOKEN não configurado');
+  const data = await getJson(`https://brapi.dev/api/v2/currency?currency=${pair}&token=${token}`);
+  const q = data.currency?.[0];
+  const price = Number(q?.bidPrice);
+  if (!Number.isFinite(price)) throw new Error(`brapi sem cotação para ${pair}`);
+  let history = [];
+  try {
+    history = (await fromBcb(pair)).history;
+  } catch { /* o gráfico fica vazio, mas a cotação continua valendo */ }
+  return {
+    price,
+    change: Number(q.bidVariation),
+    changePct: Number(q.percentageChange),
+    high: Number(q.high),
+    low: Number(q.low),
+    history,
+  };
+}
+
+// Banco Central do Brasil, série PTAX de venda (SGS). Oficial, sem chave, atualiza uma vez por dia.
+const BCB_SERIES = { 'USD-BRL': 1, 'EUR-BRL': 21619 };
+
+export async function fromBcb(pair) {
+  const code = BCB_SERIES[pair];
+  if (!code) throw new Error(`sem série do Banco Central para ${pair}`);
+  const rows = await getJson(
+    `https://api.bcb.gov.br/dados/serie/bcdata.sgs.${code}/dados/ultimos/${HISTORY_DAYS + 1}?formato=json`,
+  );
+  const history = rows.map(({ data, valor }) => {
+    const [d, m, y] = data.split('/').map(Number);
+    return { t: Date.UTC(y, m - 1, d), v: Number(valor) };
+  });
+  if (history.length < 2) throw new Error('Banco Central sem histórico');
+  const price = history.at(-1).v;
+  const prev = history.at(-2).v;
+  return {
+    price,
+    change: price - prev,
+    changePct: ((price - prev) / prev) * 100,
+    history: history.slice(-HISTORY_DAYS),
+  };
+}
+
 // Stooq: histórico diário em CSV, sem chave. Opcional: STOOQ_API_KEY.
 export async function fromStooq(symbol) {
   const key = process.env.STOOQ_API_KEY;

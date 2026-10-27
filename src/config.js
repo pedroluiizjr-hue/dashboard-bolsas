@@ -1,6 +1,7 @@
 // Lista de ativos exibidos no painel. Edite aqui para adicionar ou remover mercados.
 // `sources` são tentadas em ordem até uma responder: [provider, símbolo naquele provider].
 // `hours` usa o fuso da bolsa; feriados não são considerados.
+// `enabled: false` esconde o ativo sem apagar a configuração.
 
 export const INDICES = [
   {
@@ -30,11 +31,13 @@ export const INDICES = [
   },
   {
     id: 'dax', name: 'DAX', exchange: 'Xetra', country: 'Alemanha',
+    enabled: false, // FMP grátis não cobre; a Stooq bloqueia a Vercel
     symbol: '^GDAXI', sources: [['stooq', '^dax']],
     tz: 'Europe/Berlin', hours: [['09:00', '17:30']],
   },
   {
     id: 'cac', name: 'CAC 40', exchange: 'Euronext Paris', country: 'França',
+    enabled: false, // FMP grátis não cobre; a Stooq bloqueia a Vercel
     symbol: '^FCHI', sources: [['stooq', '^cac']],
     tz: 'Europe/Paris', hours: [['09:00', '17:30']],
   },
@@ -50,15 +53,15 @@ export const INDICES = [
   },
 ];
 
-// Câmbio: AwesomeAPI primeiro; FMP e Stooq se ela recusar (comum em servidores na nuvem).
+// Câmbio: brapi (tempo quase real), depois AwesomeAPI, e por fim a PTAX do Banco Central.
 export const CURRENCIES = [
   {
     id: 'usd', symbol: 'USD-BRL', name: 'Dólar comercial',
-    sources: [['awesome', 'USD-BRL'], ['fmp', 'USDBRL'], ['stooq', 'usdbrl']],
+    sources: [['brapiFx', 'USD-BRL'], ['awesome', 'USD-BRL'], ['bcb', 'USD-BRL']],
   },
   {
     id: 'eur', symbol: 'EUR-BRL', name: 'Euro',
-    sources: [['awesome', 'EUR-BRL'], ['fmp', 'EURBRL'], ['stooq', 'eurbrl']],
+    sources: [['brapiFx', 'EUR-BRL'], ['awesome', 'EUR-BRL'], ['bcb', 'EUR-BRL']],
   },
 ];
 

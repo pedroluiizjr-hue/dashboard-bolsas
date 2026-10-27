@@ -49,11 +49,12 @@ Cada ativo tem uma lista de fontes em `src/config.js`, tentadas em ordem até um
 |---|---|---|
 | Ibovespa e ativos da B3 | [brapi.dev](https://brapi.dev/docs) | `BRAPI_TOKEN` (plano grátis) |
 | S&P 500, Nasdaq, Dow Jones, FTSE 100, Nikkei, Hang Seng | [Financial Modeling Prep](https://site.financialmodelingprep.com/developer/docs) | `FMP_API_KEY` (plano grátis) |
-| DAX, CAC 40 | [Stooq](https://stooq.com) (não estão no plano grátis da FMP) | Não precisa (opcional `STOOQ_API_KEY`) |
-| Dólar e euro | [AwesomeAPI](https://docs.awesomeapi.com.br/api-de-moedas) → FMP → Stooq | Opcional `AWESOME_API_KEY` |
+| Dólar e euro | brapi (cotação) + Banco Central (gráfico) → [AwesomeAPI](https://docs.awesomeapi.com.br/api-de-moedas) → [PTAX do Banco Central](https://dadosabertos.bcb.gov.br) | `BRAPI_TOKEN` |
+| DAX, CAC 40 | Desativados (`enabled: false`): fora do plano grátis da FMP, e a Stooq bloqueia a Vercel | — |
 
-A AwesomeAPI costuma recusar (HTTP 429) consultas vindas de servidores na nuvem sem chave;
-nesse caso o painel usa a próxima fonte da lista.
+Na Vercel, a AwesomeAPI devolve 429, a Stooq devolve 403 e a FMP grátis não cobre câmbio com real.
+Por isso o câmbio usa a brapi, com a PTAX oficial do Banco Central como reserva
+(a PTAX é atualizada uma vez por dia).
 
 Se todas as fontes de um ativo falharem, o card mostra **Indisponível** com o motivo. O painel
 nunca exibe números fictícios fora do modo demo (`npm run demo`).
