@@ -24,12 +24,12 @@ A forma mais simples é a [Vercel](https://vercel.com), plano grátis:
 1. Suba este projeto para um repositório no GitHub.
 2. Na Vercel: **Add New → Project**, escolha o repositório e clique em **Deploy**
    (não precisa mudar nenhuma configuração; o `vercel.json` já cuida disso).
-3. Em **Settings → Environment Variables**, cadastre `BRAPI_TOKEN`, `FMP_API_KEY`
-   e, se quiser, `CACHE_SECONDS=300`. Depois, em **Deployments**, clique em **Redeploy**.
+3. Em **Settings → Environment Variables**, cadastre `BRAPI_TOKEN`, `FMP_API_KEY` e
+   `AWESOME_API_KEY`. Depois, em **Deployments**, clique em **Redeploy**.
 4. Use o link gerado (ex.: `https://dashboard-bolsas.vercel.app`) no seu painel de BI.
 
 As cotações ficam em cache na CDN da Vercel: não importa quantas telas estejam abertas,
-as APIs são consultadas no máximo uma vez a cada `CACHE_SECONDS`.
+cada fonte é consultada no máximo no ritmo descrito em "Frequência de atualização".
 
 **Opções no link**
 - `?tema=escuro` ou `?tema=claro` força o tema (por padrão segue o sistema).
@@ -60,33 +60,46 @@ o card mostra qual fonte está em uso.
 Se todas as fontes de um ativo falharem, o card mostra **Indisponível** com o motivo. O painel
 nunca exibe números fictícios fora do modo demo (`npm run demo`).
 
+## Frequência de atualização
+
+A tela pergunta ao servidor a cada minuto, mas cada cotação só é buscada de novo na fonte quando
+seu prazo vence (valores em `REFRESH_MINUTES`, em `src/config.js`):
+
+| Ativo | Pregão aberto | Pregão fechado |
+|---|---|---|
+| Dólar e euro (AwesomeAPI) | a cada 2 min (09h–18h, horário de Brasília) | guarda a última até a abertura |
+| Ibovespa (brapi) | a cada 5 min | guarda a última até a abertura |
+| Bolsas globais (FMP) | a cada 20 min | guarda a última até a abertura |
+| Gráficos de 30 dias | a cada 6 h | a cada 6 h |
+
+Isso mantém a FMP em torno de 170 consultas por dia, abaixo do limite grátis de 250. Cada card
+mostra a fonte e o horário da cotação.
+
 ## Como funciona
 
 ```
-navegador ──GET /api/markets──▶ src/server.js ──▶ AwesomeAPI / brapi / FMP
-   ▲   (a cada 60 s)                 │ cache em memória (CACHE_SECONDS)
-   └──────── public/ (HTML, CSS, JS) ◀┘
+navegador ──/api/assets, /api/quote?id=…, /api/history?id=…──▶ api/*.js (Vercel) ou src/server.js
+   ▲   (cotações a cada 1 min, gráficos a cada 30 min)          │ cache da CDN com prazo por ativo
+   └──────────────── public/ (HTML, CSS, JS) ◀────────────────── src/markets.js → src/providers.js
 ```
 
 - As chamadas às APIs ficam no servidor: as chaves não vão para o navegador e não há problema de CORS.
-- O cache evita estourar os limites dos planos grátis (FMP: ~250 chamadas/dia; com 8 índices e
-  2 chamadas cada, use `CACHE_SECONDS=600` ou mais se o painel ficar aberto o dia todo).
-- O status "Aberta/Fechada" é calculado no navegador pelo fuso de cada bolsa. Feriados não são considerados.
+- O status "Aberta/Fechada" usa o fuso de cada bolsa. Feriados não são considerados.
 
 ## Personalizar
 
 - **Adicionar/remover bolsas ou moedas:** edite `src/config.js`. Ex.: `{ provider: 'brapi', symbol: 'PETR4', ... }`
   para uma ação da B3, ou `{ pair: 'BTC-BRL', name: 'Bitcoin' }` em `CURRENCIES`.
-- **Trocar de provedor:** escreva uma função em `src/providers.js` que devolva
-  `{ price, change, changePct, history: [{ t, v }] }` e registre em `PROVIDERS` no `server.js`.
+- **Trocar de provedor:** crie em `src/providers.js` um objeto com `quote(símbolo)` e `history(símbolo)`,
+  exporte-o e use o nome dele em `sources` no `src/config.js`.
 
 ## Estrutura
 
 ```
 src/config.js      ativos, fusos e horários de pregão
 src/providers.js   integração com cada API + dados demo
-src/markets.js     monta a resposta e faz cache em memória
-src/server.js      servidor HTTP local (npm start)
-api/markets.js     a mesma rota como função serverless da Vercel
+src/markets.js     escolhe a fonte, define o prazo de cada cotação e as rotas /api/*
+src/server.js      servidor HTTP local (npm start), com cache em memória
+api/*.js           as mesmas rotas como funções serverless da Vercel
 public/            interface (sem framework)
 ```

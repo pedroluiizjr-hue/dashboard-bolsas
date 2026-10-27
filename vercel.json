@@ -2,6 +2,6 @@
   "outputDirectory": "public",
   "regions": ["gru1"],
   "functions": {
-    "api/markets.js": { "maxDuration": 60 }
+    "api/*.js": { "maxDuration": 60 }
   }
 }

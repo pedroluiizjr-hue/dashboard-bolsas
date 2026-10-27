@@ -1,4 +1,7 @@
-const REFRESH_MS = 60_000;
+// A tela pergunta a cada minuto; o servidor só consulta as fontes quando o prazo de cada
+// cotação vence (2 min no câmbio, 5 min no Ibovespa, 20 min nas bolsas globais).
+const QUOTE_POLL_MS = 60_000;
+const HISTORY_POLL_MS = 30 * 60_000;
 
 // ?tema=claro ou ?tema=escuro força o tema (útil ao embutir em painéis de BI).
 const tema = new URLSearchParams(location.search).get('tema');
@@ -63,7 +66,10 @@ const SOURCE_LABEL = {
   brapi: 'brapi', brapiFx: 'brapi', fmp: 'FMP', awesome: 'AwesomeAPI',
   bcb: 'PTAX · Banco Central', frankfurter: 'BCE (diária)', stooq: 'Stooq', demo: 'demonstração',
 };
-const sourceTag = (a) => (a.source ? `<span class="src">Fonte: ${SOURCE_LABEL[a.source] || a.source}</span>` : '');
+const hhmm = (iso) => new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+const sourceTag = (a) => (a.source
+  ? `<span class="src">Fonte: ${SOURCE_LABEL[a.source] || a.source}${a.fetchedAt ? ` · cotação das ${hhmm(a.fetchedAt)}` : ''}</span>`
+  : '');
 
 function renderUsd(c) {
   if (c.price == null) {
@@ -116,24 +122,74 @@ function renderIndices(list) {
   }).join('');
 }
 
-async function refresh() {
-  try {
-    const res = await fetch('/api/markets');
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    const [usd, ...others] = data.currencies;
-    if (usd) renderUsd(usd);
-    renderSideFx(others);
-    renderIndices(data.indices);
-    const all = [...data.indices, ...data.currencies];
-    $('#demo-flag').hidden = !all.some((a) => a.source === 'demo');
-    $('#updated').textContent = 'atualizado às '
-      + new Date(data.updatedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  } catch (err) {
-    $('#updated').textContent = `falha ao atualizar (${err.message}); tentando de novo em 60 s`;
-  }
+const state = { assets: [], quotes: {}, histories: {} };
+
+async function getJson(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
 }
 
-$('#refresh').addEventListener('click', refresh);
-refresh();
-setInterval(refresh, REFRESH_MS);
+// O gráfico termina no preço atual: o último ponto do histórico é trocado (ou somado) pela cotação.
+function withLivePoint(history, quote) {
+  if (!history.length || quote?.price == null) return history;
+  const day = (t) => new Date(t).toISOString().slice(0, 10);
+  const now = Date.now();
+  const last = history.at(-1);
+  return day(last.t) === day(now)
+    ? [...history.slice(0, -1), { t: last.t, v: quote.price }]
+    : [...history, { t: now, v: quote.price }];
+}
+
+function merged(asset) {
+  const quote = state.quotes[asset.id] || { price: null, error: 'carregando' };
+  const history = state.histories[asset.id]?.history || [];
+  return { ...asset, ...quote, history: withLivePoint(history, quote) };
+}
+
+function render() {
+  const all = state.assets.map(merged);
+  const [usd, ...otherFx] = all.filter((a) => a.kind === 'currency');
+  if (usd) renderUsd(usd);
+  renderSideFx(otherFx);
+  renderIndices(all.filter((a) => a.kind === 'index'));
+  $('#demo-flag').hidden = !all.some((a) => a.source === 'demo');
+}
+
+async function refreshQuotes() {
+  const results = await Promise.allSettled(state.assets.map((a) => getJson(`/api/quote?id=${a.id}`)));
+  results.forEach((r, i) => {
+    const { id } = state.assets[i];
+    // Uma falha de rede momentânea mantém a última cotação válida na tela.
+    if (r.status === 'fulfilled' && (r.value.price != null || !state.quotes[id])) state.quotes[id] = r.value;
+  });
+  const failed = results.every((r) => r.status === 'rejected');
+  $('#updated').textContent = failed
+    ? 'sem conexão com o servidor; tentando de novo em 1 min'
+    : `verificado às ${hhmm(new Date().toISOString())}`;
+  render();
+}
+
+async function refreshHistories() {
+  const results = await Promise.allSettled(state.assets.map((a) => getJson(`/api/history?id=${a.id}`)));
+  results.forEach((r, i) => {
+    if (r.status === 'fulfilled' && r.value.history?.length) state.histories[state.assets[i].id] = r.value;
+  });
+  render();
+}
+
+async function start() {
+  try {
+    state.assets = await getJson('/api/assets');
+  } catch (err) {
+    $('#updated').textContent = `falha ao carregar (${err.message}); recarregue a página`;
+    return;
+  }
+  render();
+  await Promise.all([refreshQuotes(), refreshHistories()]);
+  setInterval(refreshQuotes, QUOTE_POLL_MS);
+  setInterval(refreshHistories, HISTORY_POLL_MS);
+}
+
+$('#refresh').addEventListener('click', refreshQuotes);
+start();

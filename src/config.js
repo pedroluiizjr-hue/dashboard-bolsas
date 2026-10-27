@@ -53,18 +53,33 @@ export const INDICES = [
   },
 ];
 
-// Câmbio: fontes em tempo quase real primeiro (brapi, AwesomeAPI); depois as diárias
+// Câmbio: AwesomeAPI em tempo quase real; se falhar, as cotações diárias
 // (PTAX do Banco Central, referência do Banco Central Europeu).
+// `hours` aqui é a janela em que vale a pena renovar a cotação com frequência.
 export const CURRENCIES = [
   {
     id: 'usd', symbol: 'USD-BRL', name: 'Dólar comercial',
-    sources: [['brapiFx', 'USD-BRL'], ['awesome', 'USD-BRL'], ['bcb', 'USD-BRL'], ['frankfurter', 'USD-BRL']],
+    sources: [['awesome', 'USD-BRL'], ['bcb', 'USD-BRL'], ['frankfurter', 'USD-BRL']],
+    tz: 'America/Sao_Paulo', hours: [['09:00', '18:00']],
   },
   {
     id: 'eur', symbol: 'EUR-BRL', name: 'Euro',
-    sources: [['brapiFx', 'EUR-BRL'], ['awesome', 'EUR-BRL'], ['bcb', 'EUR-BRL'], ['frankfurter', 'EUR-BRL']],
+    sources: [['awesome', 'EUR-BRL'], ['bcb', 'EUR-BRL'], ['frankfurter', 'EUR-BRL']],
+    tz: 'America/Sao_Paulo', hours: [['09:00', '18:00']],
   },
 ];
 
-export const CACHE_SECONDS = Number(process.env.CACHE_SECONDS || 60);
+// De quantos em quantos minutos cada fonte é consultada enquanto o mercado está aberto.
+// Pensado para caber nos planos grátis: a FMP permite 250 consultas por dia.
+export const REFRESH_MINUTES = { awesome: 2, brapi: 5, fmp: 20, bcb: 60, frankfurter: 60, stooq: 60, demo: 1 };
+
+// Com o mercado fechado, a última cotação fica guardada até a abertura (no máximo este tempo).
+export const CLOSED_MAX_HOURS = 6;
+
+// O gráfico de 30 dias muda uma vez por dia; basta buscar algumas vezes.
+export const HISTORY_REFRESH_HOURS = 6;
+
+// Depois de uma falha, espera este tempo antes de tentar a fonte de novo.
+export const ERROR_RETRY_SECONDS = 120;
+
 export const HISTORY_DAYS = 30;

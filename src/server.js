@@ -2,7 +2,7 @@ import http from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getMarkets } from './markets.js';
+import { handleApi } from './markets.js';
 
 const PORT = Number(process.env.PORT || 3000);
 const PUBLIC_DIR = fileURLToPath(new URL('../public/', import.meta.url));
@@ -31,11 +31,25 @@ function send(res, status, body, type = 'text/plain; charset=utf-8') {
   res.end(body);
 }
 
+// Cache em memória com o mesmo prazo que a CDN usa na Vercel.
+const cache = new Map();
+
+async function cachedApi(pathname, searchParams) {
+  const key = `${pathname}?${searchParams}`;
+  const hit = cache.get(key);
+  if (hit && hit.expires > Date.now()) return hit.result;
+  const result = await handleApi(pathname, searchParams);
+  if (result) cache.set(key, { result, expires: Date.now() + result.ttl * 1000 });
+  return result;
+}
+
 http.createServer(async (req, res) => {
-  const { pathname } = new URL(req.url, 'http://localhost');
-  if (pathname === '/api/markets') {
+  const { pathname, searchParams } = new URL(req.url, 'http://localhost');
+  if (pathname.startsWith('/api/')) {
     try {
-      send(res, 200, JSON.stringify(await getMarkets()), 'application/json; charset=utf-8');
+      const result = await cachedApi(pathname, searchParams);
+      if (!result) return send(res, 404, JSON.stringify({ error: 'rota desconhecida' }), 'application/json; charset=utf-8');
+      send(res, result.status, JSON.stringify(result.body), 'application/json; charset=utf-8');
     } catch (err) {
       send(res, 500, JSON.stringify({ error: err.message }), 'application/json; charset=utf-8');
     }
