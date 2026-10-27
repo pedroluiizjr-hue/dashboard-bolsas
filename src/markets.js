@@ -1,33 +1,31 @@
 import { INDICES, CURRENCIES, CACHE_SECONDS } from './config.js';
-import { fromBrapi, fromFmp, fromAwesome, demo } from './providers.js';
+import { fromBrapi, fromFmp, fromAwesome, fromStooq, demo } from './providers.js';
 
 const DEMO = process.env.DEMO === '1';
-const PROVIDERS = { brapi: fromBrapi, fmp: fromFmp };
+const PROVIDERS = { brapi: fromBrapi, fmp: fromFmp, awesome: fromAwesome, stooq: fromStooq };
 
 let cache = { at: 0, payload: null };
 
-// Busca um ativo; se a fonte falhar, devolve dados demo com o motivo do erro.
-async function load(fetcher, symbol, source) {
-  if (DEMO) return { ...demo(symbol), source: 'demo' };
-  try {
-    return { ...(await fetcher(symbol)), source };
-  } catch (err) {
-    console.warn(`[${symbol}] ${err.message}`);
-    return { ...demo(symbol), source: 'demo', error: err.message };
+// Tenta cada fonte em ordem. Se todas falharem, devolve o ativo sem preço e com os
+// motivos, para o painel mostrar "Indisponível" em vez de um número inventado.
+async function load(asset) {
+  if (DEMO) return { ...demo(asset.symbol), source: 'demo' };
+  const errors = [];
+  for (const [provider, symbol] of asset.sources) {
+    try {
+      return { ...(await PROVIDERS[provider](symbol)), source: provider };
+    } catch (err) {
+      errors.push(`${provider}: ${err.message}`);
+    }
   }
+  console.warn(`[${asset.symbol}] ${errors.join(' | ')}`);
+  return { price: null, change: null, changePct: null, history: [], source: null, error: errors.join(' · ') };
 }
 
 async function buildPayload() {
   const [indices, currencies] = await Promise.all([
-    Promise.all(INDICES.map(async (ix) => ({
-      id: ix.id, name: ix.name, exchange: ix.exchange, country: ix.country,
-      symbol: ix.symbol, tz: ix.tz, hours: ix.hours,
-      ...(await load(PROVIDERS[ix.provider], ix.symbol, ix.provider)),
-    }))),
-    Promise.all(CURRENCIES.map(async (c) => ({
-      id: c.id, name: c.name, symbol: c.pair,
-      ...(await load(fromAwesome, c.pair, 'awesomeapi')),
-    }))),
+    Promise.all(INDICES.map(async ({ sources, ...ix }) => ({ ...ix, ...(await load({ sources, ...ix })) }))),
+    Promise.all(CURRENCIES.map(async ({ sources, ...c }) => ({ ...c, ...(await load({ sources, ...c })) }))),
   ]);
   return { updatedAt: new Date().toISOString(), indices, currencies };
 }

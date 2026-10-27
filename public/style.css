@@ -83,6 +83,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
 }
 .fx-main { padding: 20px 22px; min-width: 0; }
+.fx-main .err { margin-top: 8px; }
 .fx-main .label { color: var(--muted); font-size: 0.85rem; }
 .fx-main .big { font-size: 2.6rem; font-weight: 500; line-height: 1.1; margin: 4px 0; }
 .fx-main .row { display: flex; flex-wrap: wrap; gap: 6px 20px; color: var(--muted); font-size: 0.9rem; }
@@ -101,7 +102,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .card .meta { color: var(--muted); font-size: 0.82rem; }
 .card .price { font-size: 1.5rem; font-weight: 500; }
 .card svg { width: 100%; height: 48px; display: block; }
-.card .err { font-size: 0.78rem; color: var(--muted); }
+.err { font-size: 0.8rem; color: var(--muted); overflow-wrap: anywhere; }
 
 .status {
   font-size: 0.75rem; padding: 2px 8px; border-radius: 999px; white-space: nowrap;

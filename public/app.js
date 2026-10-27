@@ -55,7 +55,15 @@ function chart(history, { w = 300, h = 48, axes = false, digits = 2 } = {}) {
   </svg>`;
 }
 
+const unavailable = (a) =>
+  `<div class="err">Indisponível no momento. ${esc(a.error || '')}</div>`;
+
 function renderUsd(c) {
+  if (c.price == null) {
+    $('#fx-usd').innerHTML = `<div class="label">${esc(c.name)} · ${esc(c.symbol)}</div>
+      <div class="big num">—</div>${unavailable(c)}`;
+    return;
+  }
   $('#fx-usd').innerHTML = `
     <div class="label">${esc(c.name)} · ${esc(c.symbol)}</div>
     <div class="big num">R$ ${fmt(c.price, 4)}</div>
@@ -72,15 +80,17 @@ function renderSideFx(list) {
   $('#fx-side').innerHTML = list.map((c) => `
     <div class="card">
       <div class="head"><span class="name">${esc(c.name)}</span><span class="meta">${esc(c.symbol)}</span></div>
+      ${c.price == null ? `<div class="price num">—</div>${unavailable(c)}` : `
       <div class="price num">R$ ${fmt(c.price, 4)}</div>
       <div class="num ${dir(c.changePct)}">${signed(c.changePct)}%</div>
-      ${chart(c.history)}
+      ${chart(c.history)}`}
     </div>`).join('');
 }
 
 function renderIndices(list) {
   $('#indices').innerHTML = list.map((ix) => {
     const st = marketStatus(ix);
+    const off = ix.price == null;
     return `
     <article class="card">
       <div class="head">
@@ -89,9 +99,9 @@ function renderIndices(list) {
       </div>
       <div class="meta">${esc(ix.exchange)} · ${esc(ix.country)} · ${st.time} local</div>
       <div class="price num">${fmt(ix.price)}</div>
+      ${off ? unavailable(ix) : `
       <div class="num ${dir(ix.changePct)}">${signed(ix.change)} (${signed(ix.changePct)}%)</div>
-      ${chart(ix.history)}
-      ${ix.error ? `<div class="err">Sem dados reais: ${esc(ix.error)}</div>` : ''}
+      ${chart(ix.history)}`}
     </article>`;
   }).join('');
 }

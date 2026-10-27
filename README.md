@@ -15,6 +15,7 @@ npm start               # http://localhost:3000
 ```
 
 Para ver o painel sem chaves nem internet: `npm run demo` (dados fictícios, sinalizados na tela).
+Sem `DEMO=1`, o painel mostra apenas dados reais.
 
 ## Publicar com link fixo (para o painel de BI)
 
@@ -42,14 +43,20 @@ as APIs são consultadas no máximo uma vez a cada `CACHE_SECONDS`.
 
 ## Fontes de dados
 
-| Dados | API | Chave |
-|---|---|---|
-| Dólar e euro (USD-BRL, EUR-BRL) | [AwesomeAPI](https://docs.awesomeapi.com.br/api-de-moedas) | Não precisa (opcional `AWESOME_API_KEY`) |
-| Ibovespa e ativos da B3 | [brapi.dev](https://brapi.dev/docs) | `BRAPI_TOKEN` (plano grátis) |
-| Índices globais | [Financial Modeling Prep](https://site.financialmodelingprep.com/developer/docs) | `FMP_API_KEY` (plano grátis) |
+Cada ativo tem uma lista de fontes em `src/config.js`, tentadas em ordem até uma responder.
 
-Se uma fonte falhar ou estiver sem chave, aquele card mostra dados de demonstração com o
-motivo do erro, e o selo "Dados de demonstração" aparece no topo. O resto do painel continua funcionando.
+| Dados | Fontes (em ordem) | Chave |
+|---|---|---|
+| Ibovespa e ativos da B3 | [brapi.dev](https://brapi.dev/docs) | `BRAPI_TOKEN` (plano grátis) |
+| S&P 500, Nasdaq, Dow Jones, FTSE 100, Nikkei, Hang Seng | [Financial Modeling Prep](https://site.financialmodelingprep.com/developer/docs) | `FMP_API_KEY` (plano grátis) |
+| DAX, CAC 40 | [Stooq](https://stooq.com) (não estão no plano grátis da FMP) | Não precisa (opcional `STOOQ_API_KEY`) |
+| Dólar e euro | [AwesomeAPI](https://docs.awesomeapi.com.br/api-de-moedas) → FMP → Stooq | Opcional `AWESOME_API_KEY` |
+
+A AwesomeAPI costuma recusar (HTTP 429) consultas vindas de servidores na nuvem sem chave;
+nesse caso o painel usa a próxima fonte da lista.
+
+Se todas as fontes de um ativo falharem, o card mostra **Indisponível** com o motivo. O painel
+nunca exibe números fictícios fora do modo demo (`npm run demo`).
 
 ## Como funciona
 

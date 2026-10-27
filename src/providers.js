@@ -79,7 +79,31 @@ export async function fromAwesome(pair) {
   };
 }
 
-// Dados de exemplo para rodar sem chaves ou sem rede. Sempre marcados como "demo".
+// Stooq: histórico diário em CSV, sem chave. Opcional: STOOQ_API_KEY.
+export async function fromStooq(symbol) {
+  const key = process.env.STOOQ_API_KEY;
+  const url = `https://stooq.com/q/d/l/?s=${encodeURIComponent(symbol)}&i=d`
+    + (key ? `&apikey=${key}` : '');
+  const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+  if (!res.ok) throw new Error(`HTTP ${res.status} em stooq.com`);
+  const lines = (await res.text()).trim().split(/\r?\n/);
+  if (!lines[0]?.startsWith('Date')) throw new Error(lines[0]?.slice(0, 80) || 'resposta vazia');
+  const rows = lines.slice(1).slice(-(HISTORY_DAYS + 1))
+    .map((l) => l.split(','))
+    .map(([date, , , , close]) => ({ t: Date.parse(date), v: Number(close) }))
+    .filter((p) => Number.isFinite(p.v));
+  if (rows.length < 2) throw new Error(`stooq sem histórico para ${symbol}`);
+  const price = rows.at(-1).v;
+  const prev = rows.at(-2).v;
+  return {
+    price,
+    change: price - prev,
+    changePct: ((price - prev) / prev) * 100,
+    history: rows.slice(-HISTORY_DAYS),
+  };
+}
+
+// Dados de exemplo, usados só com DEMO=1. Sempre marcados como "demo".
 const DEMO_LEVELS = {
   '^BVSP': 128000, '^GSPC': 5800, '^IXIC': 18400, '^DJI': 42000, '^FTSE': 8300,
   '^GDAXI': 19400, '^FCHI': 7500, '^N225': 39000, '^HSI': 20500,
