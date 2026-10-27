@@ -92,6 +92,17 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .fx-side { display: grid; gap: 16px; align-content: start; }
 .fx-side .card { padding: 16px 18px; }
 
+/* Juros e inflação */
+.rates { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
+.rate {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 14px 18px; display: grid; gap: 4px; min-width: 0;
+}
+.rate .head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.rate .name { font-weight: 600; }
+.rate .meta { color: var(--muted); font-size: 0.82rem; }
+.rate .value { font-size: 1.5rem; font-weight: 500; }
+
 /* Bolsas */
 .grid {
   display: grid; gap: 16px;
@@ -122,5 +133,6 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 @media (max-width: 720px) {
   .fx { grid-template-columns: 1fr; }
+  .rates { grid-template-columns: 1fr; }
   .fx-main .big { font-size: 2.1rem; }
 }

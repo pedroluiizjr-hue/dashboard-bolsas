@@ -69,9 +69,34 @@ export const CURRENCIES = [
   },
 ];
 
+// Commodities negociadas em dólar. Consultadas só no horário comercial do Brasil e de hora em hora
+// (`refreshMinutes`), para caber no limite diário da FMP junto com as bolsas.
+export const COMMODITIES = [
+  {
+    id: 'brent', name: 'Petróleo Brent', unit: 'US$ / barril',
+    symbol: 'BZUSD', sources: [['fmp', 'BZUSD']], refreshMinutes: 60,
+    tz: 'America/Sao_Paulo', hours: [['09:00', '18:00']],
+  },
+  {
+    id: 'gold', name: 'Ouro', unit: 'US$ / onça-troy',
+    symbol: 'GCUSD', sources: [['fmp', 'GCUSD']], refreshMinutes: 60,
+    tz: 'America/Sao_Paulo', hours: [['09:00', '18:00']],
+  },
+];
+
+// Juros e inflação, séries oficiais do Banco Central (SGS).
+// `period` diz como mostrar a data de referência: dia (Selic, CDI) ou mês (IPCA).
+export const INDICATORS = [
+  { id: 'selic', name: 'Selic', detail: 'meta, % ao ano', symbol: '432', sources: [['sgs', 432]], period: 'day' },
+  { id: 'cdi', name: 'CDI', detail: '% ao ano', symbol: '4389', sources: [['sgs', 4389]], period: 'day' },
+  { id: 'ipca', name: 'IPCA', detail: 'acumulado em 12 meses, %', symbol: '13522', sources: [['sgs', 13522]], period: 'month' },
+];
+
 // De quantos em quantos minutos cada fonte é consultada enquanto o mercado está aberto.
 // Pensado para caber nos planos grátis: a FMP permite 250 consultas por dia.
-export const REFRESH_MINUTES = { awesome: 2, brapi: 5, fmp: 20, bcb: 60, frankfurter: 60, stooq: 60, demo: 1 };
+export const REFRESH_MINUTES = {
+  awesome: 2, brapi: 5, fmp: 20, bcb: 60, frankfurter: 60, stooq: 60, sgs: 360, demo: 1,
+};
 
 // Com o mercado fechado, a última cotação fica guardada até a abertura (no máximo este tempo).
 export const CLOSED_MAX_HOURS = 6;

@@ -64,13 +64,15 @@ const unavailable = (a) =>
 
 const SOURCE_LABEL = {
   brapi: 'brapi', brapiFx: 'brapi', fmp: 'FMP', awesome: 'AwesomeAPI',
-  bcb: 'PTAX · Banco Central', frankfurter: 'BCE (diária)', stooq: 'Stooq', demo: 'demonstração',
+  bcb: 'PTAX · Banco Central', sgs: 'Banco Central', frankfurter: 'BCE (diária)', stooq: 'Stooq', demo: 'demonstração',
 };
 const hhmm = (iso) => new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 // Mercado aberto: hora da cotação. Fechado: o número é o fechamento do último pregão.
 function sourceTag(a) {
   if (!a.source) return '';
-  const when = a.tz && !marketStatus(a).open ? 'fechamento'
+  const closes = a.kind === 'index' || a.kind === 'currency';
+  const when = a.kind === 'indicator' ? ''
+    : closes && !marketStatus(a).open ? 'fechamento'
     : a.fetchedAt ? `cotação das ${hhmm(a.fetchedAt)}` : '';
   return `<span class="src">Fonte: ${SOURCE_LABEL[a.source] || a.source}${when ? ` · ${when}` : ''}</span>`;
 }
@@ -157,7 +159,44 @@ function render() {
   if (usd) renderUsd(usd);
   renderSideFx(otherFx);
   renderIndices(all.filter((a) => a.kind === 'index'));
+  renderCommodities(all.filter((a) => a.kind === 'commodity'));
+  renderRates(all.filter((a) => a.kind === 'indicator'));
   $('#demo-flag').hidden = !all.some((a) => a.source === 'demo');
+}
+
+function renderCommodities(list) {
+  $('#commodities').innerHTML = list.map((c) => `
+    <article class="card">
+      <div class="head"><span class="name">${esc(c.name)}</span></div>
+      <div class="meta">${esc(c.unit)}</div>
+      <div class="price num">${c.price == null ? '—' : `US$ ${fmt(c.price)}`}</div>
+      ${c.price == null ? unavailable(c) : `
+      <div class="num ${dir(c.changePct)}">${signed(c.change)} (${signed(c.changePct)}%)</div>
+      ${chart(c.history)}
+      ${sourceTag(c)}`}
+    </article>`).join('');
+}
+
+const MONTHS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+function refLabel(r) {
+  if (!r.refDate) return '';
+  const [d, m, y] = r.refDate.split('/');
+  return r.period === 'month' ? `ref. ${MONTHS[Number(m) - 1]}/${y}` : `em ${d}/${m}/${y}`;
+}
+
+// Juros e inflação: valor, variação para o dado anterior (em pontos percentuais) e data de referência.
+function renderRates(list) {
+  $('#rates').innerHTML = list.map((r) => `
+    <div class="rate">
+      <div class="head"><span class="name">${esc(r.name)}</span><span class="meta">${esc(r.detail)}</span></div>
+      ${r.price == null ? `<div class="value num">—</div>${unavailable(r)}` : `
+      <div class="value num">${fmt(r.price)}%</div>
+      <div class="meta">${[
+        r.change ? `<span class="num ${dir(r.change)}">${signed(r.change)} p.p.</span>` : '',
+        refLabel(r),
+      ].filter(Boolean).join(' · ')}</div>
+      ${sourceTag(r)}`}
+    </div>`).join('');
 }
 
 async function refreshQuotes() {
@@ -174,10 +213,12 @@ async function refreshQuotes() {
   render();
 }
 
+// Indicadores não têm gráfico, então não pedem histórico.
 async function refreshHistories() {
-  const results = await Promise.allSettled(state.assets.map((a) => getJson(`/api/history?id=${a.id}`)));
+  const charted = state.assets.filter((a) => a.kind !== 'indicator');
+  const results = await Promise.allSettled(charted.map((a) => getJson(`/api/history?id=${a.id}`)));
   results.forEach((r, i) => {
-    if (r.status === 'fulfilled' && r.value.history?.length) state.histories[state.assets[i].id] = r.value;
+    if (r.status === 'fulfilled' && r.value.history?.length) state.histories[charted[i].id] = r.value;
   });
   render();
 }

@@ -1,7 +1,8 @@
 # Painel de Mercados
 
-Dashboard com as principais bolsas de valores (Ibovespa, S&P 500, Nasdaq, Dow Jones,
-FTSE 100, DAX, CAC 40, Nikkei 225, Hang Seng) e o câmbio (dólar e euro em reais).
+Dashboard com câmbio (dólar e euro em reais), juros e inflação (Selic, CDI, IPCA), as principais
+bolsas (Ibovespa, S&P 500, Nasdaq, Dow Jones, FTSE 100, Nikkei 225, Hang Seng) e commodities
+(petróleo Brent e ouro).
 
 ![Prévia](docs/preview.png)
 
@@ -49,6 +50,8 @@ Cada ativo tem uma lista de fontes em `src/config.js`, tentadas em ordem até um
 |---|---|---|
 | Ibovespa e ativos da B3 | [brapi.dev](https://brapi.dev/docs) | `BRAPI_TOKEN` (plano grátis) |
 | S&P 500, Nasdaq, Dow Jones, FTSE 100, Nikkei, Hang Seng | [Financial Modeling Prep](https://site.financialmodelingprep.com/developer/docs) | `FMP_API_KEY` (plano grátis) |
+| Selic, CDI, IPCA 12 meses | [Banco Central (SGS)](https://dadosabertos.bcb.gov.br) | Não precisa |
+| Petróleo Brent, ouro | Financial Modeling Prep | `FMP_API_KEY` |
 | Dólar e euro | brapi → [AwesomeAPI](https://docs.awesomeapi.com.br/api-de-moedas) → [PTAX do Banco Central](https://dadosabertos.bcb.gov.br) → [Frankfurter/BCE](https://frankfurter.dev) | `AWESOME_API_KEY` recomendada (sem ela, na Vercel, o câmbio cai para as cotações diárias) |
 | DAX, CAC 40 | Desativados (`enabled: false`): fora do plano grátis da FMP, e a Stooq bloqueia a Vercel | — |
 
@@ -70,9 +73,11 @@ seu prazo vence (valores em `REFRESH_MINUTES`, em `src/config.js`):
 | Dólar e euro (AwesomeAPI) | a cada 2 min (09h–18h, horário de Brasília) | guarda a última até a abertura |
 | Ibovespa (brapi) | a cada 5 min | guarda a última até a abertura |
 | Bolsas globais (FMP) | a cada 20 min | guarda a última até a abertura |
+| Brent e ouro (FMP) | a cada 1 h (09h–18h, horário de Brasília) | guarda a última até as 9h |
+| Selic, CDI, IPCA (Banco Central) | a cada 6 h | a cada 6 h |
 | Gráficos de 30 dias | a cada 6 h | a cada 6 h |
 
-Isso mantém a FMP em torno de 170 consultas por dia, abaixo do limite grátis de 250. Cada card
+Isso mantém a FMP em torno de 200 consultas por dia, abaixo do limite grátis de 250. Cada card
 mostra a fonte e o horário da cotação.
 
 ## Como funciona

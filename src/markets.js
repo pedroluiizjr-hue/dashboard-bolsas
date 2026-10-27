@@ -1,5 +1,5 @@
 import {
-  INDICES, CURRENCIES, REFRESH_MINUTES, CLOSED_MAX_HOURS, HISTORY_REFRESH_HOURS, ERROR_RETRY_SECONDS,
+  INDICES, CURRENCIES, COMMODITIES, INDICATORS, REFRESH_MINUTES, CLOSED_MAX_HOURS, HISTORY_REFRESH_HOURS, ERROR_RETRY_SECONDS,
 } from './config.js';
 import * as providers from './providers.js';
 
@@ -8,6 +8,8 @@ const DEMO = process.env.DEMO === '1';
 const ASSETS = [
   ...INDICES.filter((a) => a.enabled !== false).map((a) => ({ ...a, kind: 'index' })),
   ...CURRENCIES.map((a) => ({ ...a, kind: 'currency' })),
+  ...COMMODITIES.map((a) => ({ ...a, kind: 'commodity' })),
+  ...INDICATORS.map((a) => ({ ...a, kind: 'indicator' })),
 ];
 const byId = new Map(ASSETS.map((a) => [a.id, a]));
 
@@ -25,11 +27,13 @@ const toMinutes = (hhmm) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3)
 // Segundos que uma cotação pode ficar guardada: curto com o mercado aberto,
 // e até a próxima abertura (limitado) com ele fechado.
 function quoteTtl(asset, provider) {
+  const openTtl = (asset.refreshMinutes ?? REFRESH_MINUTES[provider]) * 60;
+  if (!asset.tz) return openTtl; // indicadores: sem horário de pregão
   const { weekday, minutes } = localTime(asset.tz);
   const isWeekday = weekday !== 'Sat' && weekday !== 'Sun';
   const sessions = asset.hours.map(([a, b]) => [toMinutes(a), toMinutes(b)]);
   if (isWeekday && sessions.some(([a, b]) => minutes >= a && minutes < b)) {
-    return REFRESH_MINUTES[provider] * 60;
+    return openTtl;
   }
   const nextOpen = isWeekday ? sessions.map(([a]) => a).find((a) => a > minutes) : undefined;
   const untilOpen = nextOpen != null ? (nextOpen - minutes) * 60 : Infinity;
@@ -53,7 +57,7 @@ async function firstSuccess(asset, method) {
 
 // Lista dos ativos para a tela, sem detalhes das fontes.
 export function listAssets() {
-  return ASSETS.map(({ sources, enabled, ...a }) => a);
+  return ASSETS.map(({ sources, enabled, refreshMinutes, ...a }) => a);
 }
 
 // Cada função devolve { status, body, ttl }; ttl (segundos) define o cache da CDN.

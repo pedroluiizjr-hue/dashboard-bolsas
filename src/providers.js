@@ -95,20 +95,39 @@ export const awesome = {
   },
 };
 
-// Banco Central do Brasil, série PTAX de venda (SGS). Oficial, sem chave, uma cotação por dia.
+// Banco Central do Brasil, Sistema Gerenciador de Séries (SGS). Oficial e sem chave.
+async function sgsRows(code, count) {
+  const rows = await getJson(
+    `https://api.bcb.gov.br/dados/serie/bcdata.sgs.${code}/dados/ultimos/${count}?formato=json`,
+    15_000,
+  );
+  return rows.map(({ data, valor }) => {
+    const [d, m, y] = data.split('/').map(Number);
+    return { t: Date.UTC(y, m - 1, d), v: Number(valor), date: data };
+  });
+}
+
+// Indicadores (Selic, CDI, IPCA): valor mais recente e diferença para o anterior, em pontos.
+export const sgs = {
+  async quote(code) {
+    const rows = await sgsRows(code, 2);
+    if (!rows.length) throw new Error(`Banco Central sem dados na série ${code}`);
+    const last = rows.at(-1);
+    const prev = rows.at(-2);
+    return { price: last.v, change: prev ? last.v - prev.v : null, changePct: null, refDate: last.date };
+  },
+  async history(code) {
+    return sgsRows(code, HISTORY_DAYS);
+  },
+};
+
+// Série PTAX de venda, reserva do câmbio. Uma cotação por dia.
 const BCB_SERIES = { 'USD-BRL': 1, 'EUR-BRL': 21619 };
 export const bcb = {
   async history(pair) {
     const code = BCB_SERIES[pair];
     if (!code) throw new Error(`sem série do Banco Central para ${pair}`);
-    const rows = await getJson(
-      `https://api.bcb.gov.br/dados/serie/bcdata.sgs.${code}/dados/ultimos/${HISTORY_DAYS + 1}?formato=json`,
-      15_000,
-    );
-    return rows.map(({ data, valor }) => {
-      const [d, m, y] = data.split('/').map(Number);
-      return { t: Date.UTC(y, m - 1, d), v: Number(valor) };
-    });
+    return sgsRows(code, HISTORY_DAYS + 1);
   },
   async quote(pair) {
     return quoteFromHistory(await bcb.history(pair));
@@ -156,6 +175,7 @@ const DEMO_LEVELS = {
   '^BVSP': 128000, '^GSPC': 5800, '^IXIC': 18400, '^DJI': 42000, '^FTSE': 8300,
   '^GDAXI': 19400, '^FCHI': 7500, '^N225': 39000, '^HSI': 20500,
   'USD-BRL': 5.45, 'EUR-BRL': 5.9,
+  432: 15, 4389: 14.9, 13522: 5.2, BZUSD: 65, GCUSD: 4000,
 };
 
 export const demo = {
