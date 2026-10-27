@@ -16,6 +16,30 @@ npm start               # http://localhost:3000
 
 Para ver o painel sem chaves nem internet: `npm run demo` (dados fictícios, sinalizados na tela).
 
+## Publicar com link fixo (para o painel de BI)
+
+A forma mais simples é a [Vercel](https://vercel.com), plano grátis:
+
+1. Suba este projeto para um repositório no GitHub.
+2. Na Vercel: **Add New → Project**, escolha o repositório e clique em **Deploy**
+   (não precisa mudar nenhuma configuração; o `vercel.json` já cuida disso).
+3. Em **Settings → Environment Variables**, cadastre `BRAPI_TOKEN`, `FMP_API_KEY`
+   e, se quiser, `CACHE_SECONDS=300`. Depois, em **Deployments**, clique em **Redeploy**.
+4. Use o link gerado (ex.: `https://dashboard-bolsas.vercel.app`) no seu painel de BI.
+
+As cotações ficam em cache na CDN da Vercel: não importa quantas telas estejam abertas,
+as APIs são consultadas no máximo uma vez a cada `CACHE_SECONDS`.
+
+**Opções no link**
+- `?tema=escuro` ou `?tema=claro` força o tema (por padrão segue o sistema).
+
+**Embutindo no BI**
+- *Power BI*: em um **dashboard** (serviço), use **Adicionar bloco → Conteúdo da Web** com
+  `<iframe src="https://SEU-LINK.vercel.app/?tema=claro" width="100%" height="100%"></iframe>`.
+  Em **relatórios**, use um visual de conteúdo HTML/Web da AppSource que aceite URL.
+- *Metabase, Grafana, Looker Studio, Superset*: use o bloco/painel de "iframe", "texto/HTML" ou
+  "incorporar URL" com o mesmo link.
+
 ## Fontes de dados
 
 | Dados | API | Chave |
@@ -52,6 +76,6 @@ navegador ──GET /api/markets──▶ src/server.js ──▶ AwesomeAPI / b
 ```
 src/config.js      ativos, fusos e horários de pregão
 src/providers.js   integração com cada API + dados demo
-src/server.js      servidor HTTP, cache e rota /api/markets
+src/markets.js     monta a resposta e faz cache em memória\nsrc/server.js      servidor HTTP local (npm start)\napi/markets.js     a mesma rota como função serverless da Vercel
 public/            interface (sem framework)
 ```

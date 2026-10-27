@@ -1,5 +1,11 @@
 const REFRESH_MS = 60_000;
 
+// ?tema=claro ou ?tema=escuro força o tema (útil ao embutir em painéis de BI).
+const tema = new URLSearchParams(location.search).get('tema');
+if (tema === 'claro' || tema === 'escuro') {
+  document.documentElement.dataset.theme = tema === 'claro' ? 'light' : 'dark';
+}
+
 const $ = (sel) => document.querySelector(sel);
 const fmt = (v, digits = 2) =>
   v == null || Number.isNaN(v) ? '—'
