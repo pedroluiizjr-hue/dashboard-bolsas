@@ -67,9 +67,13 @@ const SOURCE_LABEL = {
   bcb: 'PTAX · Banco Central', frankfurter: 'BCE (diária)', stooq: 'Stooq', demo: 'demonstração',
 };
 const hhmm = (iso) => new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-const sourceTag = (a) => (a.source
-  ? `<span class="src">Fonte: ${SOURCE_LABEL[a.source] || a.source}${a.fetchedAt ? ` · cotação das ${hhmm(a.fetchedAt)}` : ''}</span>`
-  : '');
+// Mercado aberto: hora da cotação. Fechado: o número é o fechamento do último pregão.
+function sourceTag(a) {
+  if (!a.source) return '';
+  const when = a.tz && !marketStatus(a).open ? 'fechamento'
+    : a.fetchedAt ? `cotação das ${hhmm(a.fetchedAt)}` : '';
+  return `<span class="src">Fonte: ${SOURCE_LABEL[a.source] || a.source}${when ? ` · ${when}` : ''}</span>`;
+}
 
 function renderUsd(c) {
   if (c.price == null) {
