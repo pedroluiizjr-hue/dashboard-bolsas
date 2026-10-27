@@ -5,8 +5,8 @@ import { HISTORY_DAYS } from './config.js';
 
 const TIMEOUT_MS = 10_000;
 
-async function getJson(url) {
-  const res = await fetch(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+async function getJson(url, timeoutMs = TIMEOUT_MS) {
+  const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
   if (!res.ok) throw new Error(`HTTP ${res.status} em ${new URL(url).host}`);
   return res.json();
 }
@@ -110,6 +110,7 @@ export async function fromBcb(pair) {
   if (!code) throw new Error(`sem série do Banco Central para ${pair}`);
   const rows = await getJson(
     `https://api.bcb.gov.br/dados/serie/bcdata.sgs.${code}/dados/ultimos/${HISTORY_DAYS + 1}?formato=json`,
+    15_000,
   );
   const history = rows.map(({ data, valor }) => {
     const [d, m, y] = data.split('/').map(Number);
@@ -124,6 +125,21 @@ export async function fromBcb(pair) {
     changePct: ((price - prev) / prev) * 100,
     history: history.slice(-HISTORY_DAYS),
   };
+}
+
+// Frankfurter: taxas de referência do Banco Central Europeu, sem chave. Atualiza uma vez por dia.
+export async function fromFrankfurter(pair) {
+  const [from, to] = pair.split('-');
+  const start = new Date(Date.now() - (HISTORY_DAYS + 15) * 86_400_000).toISOString().slice(0, 10);
+  const data = await getJson(`https://api.frankfurter.dev/v1/${start}..?from=${from}&to=${to}`);
+  const history = Object.entries(data.rates || {})
+    .map(([date, r]) => ({ t: Date.parse(date), v: r[to] }))
+    .filter((p) => Number.isFinite(p.v))
+    .slice(-HISTORY_DAYS);
+  if (history.length < 2) throw new Error(`Frankfurter sem histórico para ${pair}`);
+  const price = history.at(-1).v;
+  const prev = history.at(-2).v;
+  return { price, change: price - prev, changePct: ((price - prev) / prev) * 100, history };
 }
 
 // Stooq: histórico diário em CSV, sem chave. Opcional: STOOQ_API_KEY.

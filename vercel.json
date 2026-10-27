@@ -1,3 +1,7 @@
 {
-  "outputDirectory": "public"
+  "outputDirectory": "public",
+  "regions": ["gru1"],
+  "functions": {
+    "api/markets.js": { "maxDuration": 60 }
+  }
 }

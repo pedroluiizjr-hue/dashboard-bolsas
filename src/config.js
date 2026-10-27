@@ -53,15 +53,16 @@ export const INDICES = [
   },
 ];
 
-// Câmbio: brapi (tempo quase real), depois AwesomeAPI, e por fim a PTAX do Banco Central.
+// Câmbio: fontes em tempo quase real primeiro (brapi, AwesomeAPI); depois as diárias
+// (PTAX do Banco Central, referência do Banco Central Europeu).
 export const CURRENCIES = [
   {
     id: 'usd', symbol: 'USD-BRL', name: 'Dólar comercial',
-    sources: [['brapiFx', 'USD-BRL'], ['awesome', 'USD-BRL'], ['bcb', 'USD-BRL']],
+    sources: [['brapiFx', 'USD-BRL'], ['awesome', 'USD-BRL'], ['bcb', 'USD-BRL'], ['frankfurter', 'USD-BRL']],
   },
   {
     id: 'eur', symbol: 'EUR-BRL', name: 'Euro',
-    sources: [['brapiFx', 'EUR-BRL'], ['awesome', 'EUR-BRL'], ['bcb', 'EUR-BRL']],
+    sources: [['brapiFx', 'EUR-BRL'], ['awesome', 'EUR-BRL'], ['bcb', 'EUR-BRL'], ['frankfurter', 'EUR-BRL']],
   },
 ];
 

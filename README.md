@@ -49,12 +49,13 @@ Cada ativo tem uma lista de fontes em `src/config.js`, tentadas em ordem até um
 |---|---|---|
 | Ibovespa e ativos da B3 | [brapi.dev](https://brapi.dev/docs) | `BRAPI_TOKEN` (plano grátis) |
 | S&P 500, Nasdaq, Dow Jones, FTSE 100, Nikkei, Hang Seng | [Financial Modeling Prep](https://site.financialmodelingprep.com/developer/docs) | `FMP_API_KEY` (plano grátis) |
-| Dólar e euro | brapi (cotação) + Banco Central (gráfico) → [AwesomeAPI](https://docs.awesomeapi.com.br/api-de-moedas) → [PTAX do Banco Central](https://dadosabertos.bcb.gov.br) | `BRAPI_TOKEN` |
+| Dólar e euro | brapi → [AwesomeAPI](https://docs.awesomeapi.com.br/api-de-moedas) → [PTAX do Banco Central](https://dadosabertos.bcb.gov.br) → [Frankfurter/BCE](https://frankfurter.dev) | Nenhuma obrigatória |
 | DAX, CAC 40 | Desativados (`enabled: false`): fora do plano grátis da FMP, e a Stooq bloqueia a Vercel | — |
 
 Na Vercel, a AwesomeAPI devolve 429, a Stooq devolve 403 e a FMP grátis não cobre câmbio com real.
-Por isso o câmbio usa a brapi, com a PTAX oficial do Banco Central como reserva
-(a PTAX é atualizada uma vez por dia).
+A API do Banco Central também costuma não responder a servidores fora do Brasil. Por isso o
+`vercel.json` fixa a função na região `gru1` (São Paulo). PTAX e Frankfurter são cotações diárias;
+o card mostra qual fonte está em uso.
 
 Se todas as fontes de um ativo falharem, o card mostra **Indisponível** com o motivo. O painel
 nunca exibe números fictícios fora do modo demo (`npm run demo`).

@@ -1,12 +1,12 @@
 import { INDICES, CURRENCIES, CACHE_SECONDS } from './config.js';
 import {
-  fromBrapi, fromBrapiCurrency, fromFmp, fromAwesome, fromBcb, fromStooq, demo,
+  fromBrapi, fromBrapiCurrency, fromFmp, fromAwesome, fromBcb, fromFrankfurter, fromStooq, demo,
 } from './providers.js';
 
 const DEMO = process.env.DEMO === '1';
 const PROVIDERS = {
   brapi: fromBrapi, brapiFx: fromBrapiCurrency, fmp: fromFmp,
-  awesome: fromAwesome, bcb: fromBcb, stooq: fromStooq,
+  awesome: fromAwesome, bcb: fromBcb, frankfurter: fromFrankfurter, stooq: fromStooq,
 };
 
 let cache = { at: 0, payload: null };

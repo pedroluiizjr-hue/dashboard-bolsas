@@ -61,7 +61,7 @@ const unavailable = (a) =>
 
 const SOURCE_LABEL = {
   brapi: 'brapi', brapiFx: 'brapi', fmp: 'FMP', awesome: 'AwesomeAPI',
-  bcb: 'PTAX · Banco Central', stooq: 'Stooq', demo: 'demonstração',
+  bcb: 'PTAX · Banco Central', frankfurter: 'BCE (diária)', stooq: 'Stooq', demo: 'demonstração',
 };
 const sourceTag = (a) => (a.source ? `<span class="src">Fonte: ${SOURCE_LABEL[a.source] || a.source}</span>` : '');
 
