@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Painel de Mercados</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="top">
+    <div>
+      <h1>Painel de Mercados</h1>
+      <p class="sub">Principais bolsas e câmbio · <span id="updated">carregando…</span></p>
+    </div>
+    <div class="actions">
+      <span id="demo-flag" class="flag" hidden>Dados de demonstração</span>
+      <button id="refresh" type="button">Atualizar</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="fx" aria-label="Câmbio">
+      <article class="fx-main" id="fx-usd"></article>
+      <div class="fx-side" id="fx-side"></div>
+    </section>
+
+    <section aria-label="Bolsas de valores">
+      <h2>Bolsas</h2>
+      <div class="grid" id="indices"></div>
+    </section>
+
+    <p class="foot">
+      Fontes: brapi.dev (B3), Financial Modeling Prep (índices globais), AwesomeAPI (câmbio).
+      Horários de pregão não consideram feriados. Atualiza a cada 60 s.
+    </p>
+  </main>
+
+  <script src="/app.js" type="module"></script>
+</body>
+</html>
