@@ -49,7 +49,7 @@ Cada ativo tem uma lista de fontes em `src/config.js`, tentadas em ordem até um
 |---|---|---|
 | Ibovespa e ativos da B3 | [brapi.dev](https://brapi.dev/docs) | `BRAPI_TOKEN` (plano grátis) |
 | S&P 500, Nasdaq, Dow Jones, FTSE 100, Nikkei, Hang Seng | [Financial Modeling Prep](https://site.financialmodelingprep.com/developer/docs) | `FMP_API_KEY` (plano grátis) |
-| Dólar e euro | brapi → [AwesomeAPI](https://docs.awesomeapi.com.br/api-de-moedas) → [PTAX do Banco Central](https://dadosabertos.bcb.gov.br) → [Frankfurter/BCE](https://frankfurter.dev) | Nenhuma obrigatória |
+| Dólar e euro | brapi → [AwesomeAPI](https://docs.awesomeapi.com.br/api-de-moedas) → [PTAX do Banco Central](https://dadosabertos.bcb.gov.br) → [Frankfurter/BCE](https://frankfurter.dev) | `AWESOME_API_KEY` recomendada (sem ela, na Vercel, o câmbio cai para as cotações diárias) |
 | DAX, CAC 40 | Desativados (`enabled: false`): fora do plano grátis da FMP, e a Stooq bloqueia a Vercel | — |
 
 Na Vercel, a AwesomeAPI devolve 429, a Stooq devolve 403 e a FMP grátis não cobre câmbio com real.
