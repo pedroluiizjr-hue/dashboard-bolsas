@@ -76,6 +76,8 @@ navegador ──GET /api/markets──▶ src/server.js ──▶ AwesomeAPI / b
 ```
 src/config.js      ativos, fusos e horários de pregão
 src/providers.js   integração com cada API + dados demo
-src/markets.js     monta a resposta e faz cache em memória\nsrc/server.js      servidor HTTP local (npm start)\napi/markets.js     a mesma rota como função serverless da Vercel
+src/markets.js     monta a resposta e faz cache em memória
+src/server.js      servidor HTTP local (npm start)
+api/markets.js     a mesma rota como função serverless da Vercel
 public/            interface (sem framework)
 ```
