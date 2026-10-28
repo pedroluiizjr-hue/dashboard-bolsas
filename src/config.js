@@ -110,4 +110,11 @@ export const ERROR_RETRY_SECONDS = 120;
 export const RATE_LIMIT_RETRY_SECONDS = 3600;
 export const NO_ACCESS_RETRY_SECONDS = 6 * 3600;
 
+// Teto de consultas por dia (UTC) a cada fonte com limite diário. Só vale com o Redis ligado,
+// que guarda a contagem entre execuções. A FMP grátis permite 250; o teto deixa folga.
+export const DAILY_BUDGET = { fmp: 200 };
+
+// Por quanto tempo a última cotação boa fica guardada para cobrir falhas da fonte.
+export const LAST_GOOD_DAYS = 30;
+
 export const HISTORY_DAYS = 30;

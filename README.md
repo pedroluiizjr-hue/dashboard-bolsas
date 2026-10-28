@@ -32,8 +32,15 @@ A forma mais simples é a [Vercel](https://vercel.com), plano grátis:
 As cotações ficam em cache na CDN da Vercel: não importa quantas telas estejam abertas,
 cada fonte é consultada no máximo no ritmo descrito em "Frequência de atualização".
 
-**Opções no link**
+**Opções no link** (podem ser combinadas: `?modo=tv&tema=escuro`)
 - `?tema=escuro` ou `?tema=claro` força o tema (por padrão segue o sistema).
+- `?modo=tv` encaixa tudo numa tela só, sem rolagem, para TVs e telões em paisagem (ex.: 1920×1080).
+
+**Armazenamento (recomendado):** ligue um Upstash Redis grátis ao projeto na Vercel
+(**Storage → Create Database → Upstash for Redis → Connect Project**) e faça um **Redeploy**.
+Com ele, as cotações ficam guardadas entre execuções, a última cotação boa cobre falhas das fontes
+e a FMP tem um teto rígido de 200 consultas por dia (`DAILY_BUDGET` em `src/config.js`).
+Confira em `/api/status`: `"armazenamento": "redis"` e o total de consultas do dia.
 
 **Embutindo no BI**
 - *Power BI*: em um **dashboard** (serviço), use **Adicionar bloco → Conteúdo da Web** com
@@ -108,6 +115,7 @@ navegador ──/api/assets, /api/quote?id=…, /api/history?id=…──▶ api
 src/config.js      ativos, fusos e horários de pregão
 src/providers.js   integração com cada API + dados demo
 src/markets.js     escolhe a fonte, define o prazo de cada cotação e as rotas /api/*
+src/store.js       armazenamento compartilhado (Upstash Redis na Vercel; memória sem ele)
 src/server.js      servidor HTTP local (npm start), com cache em memória
 api/*.js           as mesmas rotas como funções serverless da Vercel
 public/            estilos, render.js (HTML das partes) e app.js (atualização no navegador)

@@ -61,7 +61,7 @@ http.createServer(async (req, res) => {
       const url = new URL(path, 'http://localhost');
       return (await cachedApi(url.pathname, url.searchParams)).body;
     });
-    return send(res, 200, renderPage(state, { theme: searchParams.get('tema') }), 'text/html; charset=utf-8');
+    return send(res, 200, renderPage(state, { theme: searchParams.get('tema'), mode: searchParams.get('modo') }), 'text/html; charset=utf-8');
   }
   serveStatic(pathname, res);
 }).listen(PORT, () => {

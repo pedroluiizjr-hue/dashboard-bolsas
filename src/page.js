@@ -32,9 +32,11 @@ export async function collect(getJson) {
 }
 
 // `theme`: 'claro' ou 'escuro' (parâmetro ?tema= do link); sem ele, segue o sistema.
-export function renderPage(state, { theme } = {}) {
+// `mode`: 'tv' (parâmetro ?modo=tv) encaixa tudo numa tela só, sem rolagem, para TVs e telões.
+export function renderPage(state, { theme, mode } = {}) {
   const { sections, isDemo } = renderSections(state);
-  const dataTheme = theme === 'claro' ? ' data-theme="light"' : theme === 'escuro' ? ' data-theme="dark"' : '';
+  const dataTheme = (theme === 'claro' ? ' data-theme="light"' : theme === 'escuro' ? ' data-theme="dark"' : '')
+    + (mode === 'tv' ? ' data-mode="tv"' : '');
   const json = JSON.stringify(state).replace(/</g, '\\u003c');
   return `<!doctype html>
 <html lang="pt-BR"${dataTheme}>
