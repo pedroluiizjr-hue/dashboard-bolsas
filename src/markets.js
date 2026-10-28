@@ -1,5 +1,6 @@
 import {
-  INDICES, CURRENCIES, COMMODITIES, INDICATORS, REFRESH_MINUTES, CLOSED_MAX_HOURS, HISTORY_REFRESH_HOURS, ERROR_RETRY_SECONDS,
+  INDICES, CURRENCIES, COMMODITIES, INDICATORS, REFRESH_MINUTES, CLOSED_MAX_HOURS, HISTORY_REFRESH_HOURS,
+  ERROR_RETRY_SECONDS, RATE_LIMIT_RETRY_SECONDS, NO_ACCESS_RETRY_SECONDS,
 } from './config.js';
 import * as providers from './providers.js';
 
@@ -40,19 +41,28 @@ function quoteTtl(asset, provider) {
   return Math.max(60, Math.min(untilOpen, CLOSED_MAX_HOURS * 3600));
 }
 
-// Tenta cada fonte do ativo, em ordem, até uma responder.
+function retryAfter(status) {
+  if (status === 429) return RATE_LIMIT_RETRY_SECONDS;
+  if ([401, 402, 403].includes(status)) return NO_ACCESS_RETRY_SECONDS;
+  return ERROR_RETRY_SECONDS;
+}
+
+// Tenta cada fonte do ativo, em ordem, até uma responder. Se todas falharem, `retry` é o menor
+// prazo entre elas: uma falha passageira em qualquer fonte já justifica tentar logo.
 async function firstSuccess(asset, method) {
   const sources = DEMO ? [['demo', asset.symbol]] : asset.sources;
   const errors = [];
+  let retry = Infinity;
   for (const [provider, symbol] of sources) {
     try {
       return { provider, value: await providers[provider][method](symbol) };
     } catch (err) {
       errors.push(`${provider}: ${err.message}`);
+      retry = Math.min(retry, retryAfter(err.status));
     }
   }
   console.warn(`[${asset.id} ${method}] ${errors.join(' | ')}`);
-  return { error: errors.join(' · ') };
+  return { error: errors.join(' · '), retry };
 }
 
 // Lista dos ativos para a tela, sem detalhes das fontes.
@@ -66,7 +76,7 @@ export async function getQuote(id) {
   if (!asset) return { status: 404, body: { error: `ativo desconhecido: ${id}` }, ttl: 3600 };
   const r = await firstSuccess(asset, 'quote');
   if (r.error) {
-    return { status: 200, body: { id, price: null, source: null, error: r.error }, ttl: ERROR_RETRY_SECONDS };
+    return { status: 200, body: { id, price: null, source: null, error: r.error }, ttl: r.retry };
   }
   const ttl = quoteTtl(asset, r.provider);
   return {
@@ -80,7 +90,7 @@ export async function getHistory(id) {
   const asset = byId.get(id);
   if (!asset) return { status: 404, body: { error: `ativo desconhecido: ${id}` }, ttl: 3600 };
   const r = await firstSuccess(asset, 'history');
-  if (r.error) return { status: 200, body: { id, history: [], error: r.error }, ttl: ERROR_RETRY_SECONDS * 5 };
+  if (r.error) return { status: 200, body: { id, history: [], error: r.error }, ttl: Math.max(r.retry, 600) };
   return { status: 200, body: { id, history: r.value, source: r.provider }, ttl: HISTORY_REFRESH_HOURS * 3600 };
 }
 

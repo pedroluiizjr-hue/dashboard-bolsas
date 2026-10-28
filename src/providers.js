@@ -7,9 +7,15 @@ import { HISTORY_DAYS } from './config.js';
 const TIMEOUT_MS = 10_000;
 const DAY_MS = 86_400_000;
 
+// O código HTTP vai junto no erro: limite atingido (429) e plano sem acesso (401/402/403)
+// fazem o painel esperar mais antes de tentar de novo.
+function httpError(message, status) {
+  return Object.assign(new Error(message), { status });
+}
+
 async function getJson(url, timeoutMs = TIMEOUT_MS) {
   const res = await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
-  if (!res.ok) throw new Error(`HTTP ${res.status} em ${new URL(url).host}`);
+  if (!res.ok) throw httpError(`HTTP ${res.status} em ${new URL(url).host}`, res.status);
   return res.json();
 }
 
@@ -54,17 +60,26 @@ export const brapi = {
 // Financial Modeling Prep: índices globais. Chave grátis (250 consultas/dia) em
 // https://site.financialmodelingprep.com/developer/docs
 const FMP = 'https://financialmodelingprep.com/stable';
+
+// A FMP às vezes responde 200 com {"Error Message": "..."}, por exemplo ao atingir o limite diário.
+async function fmpJson(url) {
+  const data = await getJson(url);
+  const message = !Array.isArray(data) && data?.['Error Message'];
+  if (message) throw httpError(`FMP: ${message.slice(0, 120)}`, /limit/i.test(message) ? 429 : 402);
+  return data;
+}
+
 export const fmp = {
   async quote(symbol) {
     const key = requireEnv('FMP_API_KEY');
-    const data = await getJson(`${FMP}/quote?symbol=${encodeURIComponent(symbol)}&apikey=${key}`);
+    const data = await fmpJson(`${FMP}/quote?symbol=${encodeURIComponent(symbol)}&apikey=${key}`);
     const q = Array.isArray(data) ? data[0] : null;
     if (!q) throw new Error(`FMP sem cotação para ${symbol}`);
     return { price: q.price, change: q.change, changePct: q.changePercentage ?? q.changesPercentage };
   },
   async history(symbol) {
     const key = requireEnv('FMP_API_KEY');
-    const data = await getJson(`${FMP}/historical-price-eod/light?symbol=${encodeURIComponent(symbol)}`
+    const data = await fmpJson(`${FMP}/historical-price-eod/light?symbol=${encodeURIComponent(symbol)}`
       + `&from=${isoDaysAgo(HISTORY_DAYS * 2)}&apikey=${key}`);
     return (Array.isArray(data) ? data : [])
       .map((p) => ({ t: Date.parse(p.date), v: p.price }))

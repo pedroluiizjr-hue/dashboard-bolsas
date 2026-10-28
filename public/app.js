@@ -67,11 +67,15 @@ const SOURCE_LABEL = {
   bcb: 'PTAX · Banco Central', sgs: 'Banco Central', frankfurter: 'BCE (diária)', stooq: 'Stooq', demo: 'demonstração',
 };
 const hhmm = (iso) => new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+const dayHhmm = (iso) => new Date(iso).toLocaleString('pt-BR', {
+  day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+});
 // Mercado aberto: hora da cotação. Fechado: o número é o fechamento do último pregão.
 function sourceTag(a) {
   if (!a.source) return '';
   const closes = a.kind === 'index' || a.kind === 'currency';
-  const when = a.kind === 'indicator' ? ''
+  const when = a.stale ? `última cotação disponível, de ${dayHhmm(a.fetchedAt)}`
+    : a.kind === 'indicator' ? ''
     : closes && !marketStatus(a).open ? 'fechamento'
     : a.fetchedAt ? `cotação das ${hhmm(a.fetchedAt)}` : '';
   return `<span class="src">Fonte: ${SOURCE_LABEL[a.source] || a.source}${when ? ` · ${when}` : ''}</span>`;
@@ -129,6 +133,22 @@ function renderIndices(list) {
 }
 
 const state = { assets: [], quotes: {}, histories: {} };
+
+// A última cotação boa de cada ativo fica guardada no navegador. Se a fonte falhar (por exemplo,
+// limite diário atingido), o card mostra esse valor com a data, em vez de ficar em branco.
+const STORE_KEY = 'painel-mercados:v1';
+function loadStored() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
+    Object.assign(state.quotes, saved.quotes);
+    Object.assign(state.histories, saved.histories);
+  } catch { /* sem armazenamento: começa vazio */ }
+}
+function saveStored() {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify({ quotes: state.quotes, histories: state.histories }));
+  } catch { /* armazenamento cheio ou bloqueado: segue sem guardar */ }
+}
 
 async function getJson(url) {
   const res = await fetch(url);
@@ -203,9 +223,12 @@ async function refreshQuotes() {
   const results = await Promise.allSettled(state.assets.map((a) => getJson(`/api/quote?id=${a.id}`)));
   results.forEach((r, i) => {
     const { id } = state.assets[i];
-    // Uma falha de rede momentânea mantém a última cotação válida na tela.
-    if (r.status === 'fulfilled' && (r.value.price != null || !state.quotes[id])) state.quotes[id] = r.value;
+    const previous = state.quotes[id];
+    if (r.status === 'fulfilled' && r.value.price != null) state.quotes[id] = r.value;
+    else if (previous?.price != null) state.quotes[id] = { ...previous, stale: true, error: r.value?.error };
+    else if (r.status === 'fulfilled') state.quotes[id] = r.value;
   });
+  saveStored();
   const failed = results.every((r) => r.status === 'rejected');
   $('#updated').textContent = failed
     ? 'sem conexão com o servidor; tentando de novo em 1 min'
@@ -220,12 +243,14 @@ async function refreshHistories() {
   results.forEach((r, i) => {
     if (r.status === 'fulfilled' && r.value.history?.length) state.histories[charted[i].id] = r.value;
   });
+  saveStored();
   render();
 }
 
 async function start() {
   try {
     state.assets = await getJson('/api/assets');
+    loadStored();
   } catch (err) {
     $('#updated').textContent = `falha ao carregar (${err.message}); recarregue a página`;
     return;

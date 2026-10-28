@@ -104,7 +104,10 @@ export const CLOSED_MAX_HOURS = 6;
 // O gráfico de 30 dias muda uma vez por dia; basta buscar algumas vezes.
 export const HISTORY_REFRESH_HOURS = 6;
 
-// Depois de uma falha, espera este tempo antes de tentar a fonte de novo.
+// Depois de uma falha, espera este tempo antes de tentar a fonte de novo. Limite atingido (429)
+// e plano sem acesso (401/402/403) esperam mais, para não gastar o que resta do limite.
 export const ERROR_RETRY_SECONDS = 120;
+export const RATE_LIMIT_RETRY_SECONDS = 3600;
+export const NO_ACCESS_RETRY_SECONDS = 6 * 3600;
 
 export const HISTORY_DAYS = 30;
