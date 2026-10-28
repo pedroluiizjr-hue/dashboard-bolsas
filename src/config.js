@@ -95,14 +95,14 @@ export const INDICATORS = [
 // De quantos em quantos minutos cada fonte é consultada enquanto o mercado está aberto.
 // Pensado para caber nos planos grátis: a FMP permite 250 consultas por dia.
 export const REFRESH_MINUTES = {
-  awesome: 2, brapi: 5, fmp: 20, bcb: 60, frankfurter: 60, stooq: 60, sgs: 360, demo: 1,
+  awesome: 2, brapi: 5, fmp: 30, bcb: 60, frankfurter: 60, stooq: 60, sgs: 360, demo: 1,
 };
 
 // Com o mercado fechado, a última cotação fica guardada até a abertura (no máximo este tempo).
 export const CLOSED_MAX_HOURS = 6;
 
-// O gráfico de 30 dias muda uma vez por dia; basta buscar algumas vezes.
-export const HISTORY_REFRESH_HOURS = 6;
+// O gráfico de 30 dias ganha um ponto por dia (o ponto de hoje vem da cotação); duas buscas bastam.
+export const HISTORY_REFRESH_HOURS = 12;
 
 // Depois de uma falha, espera este tempo antes de tentar a fonte de novo. Limite atingido (429)
 // e plano sem acesso (401/402/403) esperam mais, para não gastar o que resta do limite.

@@ -72,12 +72,12 @@ seu prazo vence (valores em `REFRESH_MINUTES`, em `src/config.js`):
 |---|---|---|
 | Dólar e euro (AwesomeAPI) | a cada 2 min (09h–18h, horário de Brasília) | guarda a última até a abertura |
 | Ibovespa (brapi) | a cada 5 min | guarda a última até a abertura |
-| Bolsas globais (FMP) | a cada 20 min | guarda a última até a abertura |
+| Bolsas globais (FMP) | a cada 30 min | guarda a última até a abertura |
 | Brent e ouro (FMP) | a cada 1 h (09h–18h, horário de Brasília) | guarda a última até as 9h |
 | Selic, CDI, IPCA (Banco Central) | a cada 6 h | a cada 6 h |
-| Gráficos de 30 dias | a cada 6 h | a cada 6 h |
+| Gráficos de 30 dias | a cada 12 h | a cada 12 h |
 
-Isso mantém a FMP em torno de 200 consultas por dia, abaixo do limite grátis de 250. Cada card
+Isso mantém a FMP em torno de 140 consultas por dia, abaixo do limite grátis de 250. Cada card
 mostra a fonte e o horário da cotação.
 
 ## Como funciona
