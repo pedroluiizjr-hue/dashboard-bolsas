@@ -88,6 +88,10 @@ navegador ──/api/assets, /api/quote?id=…, /api/history?id=…──▶ api
    └──────────────── public/ (HTML, CSS, JS) ◀────────────────── src/markets.js → src/providers.js
 ```
 
+- A página principal é montada no servidor (`src/page.js`, `api/page.js`) já com os números, e se
+  recarrega a cada 5 min. Assim funciona em painéis de BI que não rodam JavaScript. Onde ele roda,
+  `public/app.js` atualiza os números a cada minuto sem recarregar.
+- O HTML de cada parte fica em `public/render.js`, usado pelo servidor e pelo navegador.
 - As chamadas às APIs ficam no servidor: as chaves não vão para o navegador e não há problema de CORS.
 - O status "Aberta/Fechada" usa o fuso de cada bolsa. Feriados não são considerados.
 
@@ -106,5 +110,6 @@ src/providers.js   integração com cada API + dados demo
 src/markets.js     escolhe a fonte, define o prazo de cada cotação e as rotas /api/*
 src/server.js      servidor HTTP local (npm start), com cache em memória
 api/*.js           as mesmas rotas como funções serverless da Vercel
-public/            interface (sem framework)
+public/            estilos, render.js (HTML das partes) e app.js (atualização no navegador)
+src/page.js        página completa montada no servidor
 ```

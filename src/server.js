@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { extname, join, normalize } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { handleApi } from './markets.js';
+import { collect, renderPage } from './page.js';
 
 const PORT = Number(process.env.PORT || 3000);
 const PUBLIC_DIR = fileURLToPath(new URL('../public/', import.meta.url));
@@ -15,7 +16,7 @@ const MIME = {
 };
 
 async function serveStatic(pathname, res) {
-  const file = normalize(join(PUBLIC_DIR, pathname === '/' ? 'index.html' : pathname));
+  const file = normalize(join(PUBLIC_DIR, pathname));
   if (!file.startsWith(PUBLIC_DIR)) return send(res, 403, 'Proibido');
   try {
     const body = await readFile(file);
@@ -54,6 +55,13 @@ http.createServer(async (req, res) => {
       send(res, 500, JSON.stringify({ error: err.message }), 'application/json; charset=utf-8');
     }
     return;
+  }
+  if (pathname === '/') {
+    const state = await collect(async (path) => {
+      const url = new URL(path, 'http://localhost');
+      return (await cachedApi(url.pathname, url.searchParams)).body;
+    });
+    return send(res, 200, renderPage(state, { theme: searchParams.get('tema') }), 'text/html; charset=utf-8');
   }
   serveStatic(pathname, res);
 }).listen(PORT, () => {
