@@ -156,7 +156,13 @@ async function getStatus() {
   for (const provider of Object.keys(DAILY_BUDGET)) {
     used[provider] = store.storeKind === 'redis' ? Number(await store.get(budgetKey(provider))) || 0 : null;
   }
-  return { armazenamento: store.storeKind, diaUtc: utcDay(), consultasHoje: used, tetoDiario: DAILY_BUDGET };
+  return {
+    armazenamento: store.storeKind,
+    variaveisDeBanco: store.storeEnvNames,
+    diaUtc: utcDay(),
+    consultasHoje: used,
+    tetoDiario: DAILY_BUDGET,
+  };
 }
 
 // Roteamento comum ao servidor local e às funções da Vercel.

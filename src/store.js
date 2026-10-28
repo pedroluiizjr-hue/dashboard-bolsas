@@ -3,10 +3,19 @@
 // diária de consultas por fonte. Sem as variáveis do Redis (rodando local, por exemplo), usa a
 // memória do processo, que só vale enquanto ele está de pé.
 
-const URL_ = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-const TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+// A Vercel pode criar as variáveis com um prefixo escolhido na conexão (ex.: STORAGE_KV_REST_API_URL),
+// então aceita qualquer nome terminado no padrão do Upstash. O token só-leitura não serve.
+const envEnding = (...endings) => Object.keys(process.env).sort()
+  .find((k) => !k.includes('READ_ONLY') && endings.some((e) => k.endsWith(e)) && process.env[k]);
+const URL_KEY = envEnding('KV_REST_API_URL', 'REDIS_REST_URL');
+const TOKEN_KEY = envEnding('KV_REST_API_TOKEN', 'REDIS_REST_TOKEN');
+const URL_ = URL_KEY && process.env[URL_KEY];
+const TOKEN = TOKEN_KEY && process.env[TOKEN_KEY];
 
 export const storeKind = URL_ && TOKEN ? 'redis' : 'memória';
+
+// Só os nomes (nunca os valores) das variáveis que parecem de banco, para diagnóstico.
+export const storeEnvNames = Object.keys(process.env).filter((k) => /KV|REDIS|UPSTASH/.test(k)).sort();
 
 async function redis(commands) {
   const res = await fetch(`${URL_}/pipeline`, {
