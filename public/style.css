@@ -180,7 +180,7 @@ html[data-mode="tv"] { font-size: 1.45vh; height: 100%; overflow: hidden; }
 }
 [data-mode="tv"] .fx-side .card svg, [data-mode="tv"] .fx-main svg { flex: 1 1 0; min-height: 0; height: auto; margin: 0; }
 [data-mode="tv"] .fx-main .big { font-size: 3.6rem; }
-[data-mode="tv"] .card .price { font-size: 2.1rem; }
+[data-mode="tv"] .card .price { font-size: min(2.1rem, 2.1vw); white-space: nowrap; }
 /* Juros: compactos, valor e variação na mesma linha. */
 [data-mode="tv"] .rate {
   display: grid; grid-template-columns: auto minmax(0, 1fr); align-content: center;
@@ -193,3 +193,60 @@ html[data-mode="tv"] { font-size: 1.45vh; height: 100%; overflow: hidden; }
 [data-mode="tv"] .src { font-size: 0.85rem; }
 /* O gráfico se estica para caber na célula; o ponto final ficaria achatado. */
 [data-mode="tv"] svg circle { display: none; }
+
+/* O mesmo layout de TV entra sozinho em telas largas e deitadas (TVs, telões, monitores em tela
+   cheia), mesmo sem ?modo=tv no link e sem JavaScript. ?modo=normal desliga. */
+@media (min-width: 1280px) and (min-aspect-ratio: 3/2) {
+  html:not([data-mode="normal"]) { font-size: 1.45vh; height: 100%; overflow: hidden; }
+  html:not([data-mode="normal"]) body {
+    height: 100%; font-size: 1rem;
+    padding-block: 2vh; padding-left: 2vw; padding-right: 2vw;
+    display: flex; flex-direction: column; gap: 1.6vh;
+  }
+  html:not([data-mode="normal"]) .top { margin: 0; max-width: none; align-items: center; }
+  html:not([data-mode="normal"]) h1 { font-size: 1.7rem; }
+  html:not([data-mode="normal"]) .actions button, html:not([data-mode="normal"]) h2, html:not([data-mode="normal"]) .foot { display: none; }
+  html:not([data-mode="normal"]) main {
+    max-width: none; margin: 0; flex: 1; min-height: 0;
+    display: grid; gap: 1.4vh 1vw;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-rows: 1.25fr 1fr 1fr 1fr;
+  }
+  html:not([data-mode="normal"]) main > section:not(.rates),
+  html:not([data-mode="normal"]) .fx-side,
+  html:not([data-mode="normal"]) .grid { display: contents; }
+  html:not([data-mode="normal"]) .fx-main { grid-column: 1 / 4; grid-row: 1; }
+  html:not([data-mode="normal"]) .fx-side .card { grid-column: 4 / 5; grid-row: 1; }
+  html:not([data-mode="normal"]) .rates {
+    grid-column: 5 / 7; grid-row: 1; margin: 0;
+    grid-template-columns: 1fr; grid-template-rows: repeat(3, minmax(0, 1fr)); gap: 1vh;
+  }
+  html:not([data-mode="normal"]) .grid .card {
+    grid-column: span 2;
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-content: center; column-gap: 1.5vw; row-gap: 0.4vh;
+  }
+  html:not([data-mode="normal"]) .grid .card > * { grid-column: 1; }
+  html:not([data-mode="normal"]) .grid .card > svg { grid-column: 2; grid-row: 1 / span 5; height: 100%; align-self: stretch; }
+
+  /* Cards se esticam para preencher a célula; o gráfico ocupa o espaço que sobra. */
+  html:not([data-mode="normal"]) .card, html:not([data-mode="normal"]) .fx-main, html:not([data-mode="normal"]) .rate {
+    display: flex; flex-direction: column; gap: 0.5vh; min-height: 0; overflow: hidden;
+    padding: 1.4vh 1.2vw;
+  }
+  html:not([data-mode="normal"]) .fx-side .card svg, html:not([data-mode="normal"]) .fx-main svg { flex: 1 1 0; min-height: 0; height: auto; margin: 0; }
+  html:not([data-mode="normal"]) .fx-main .big { font-size: 3.6rem; }
+  html:not([data-mode="normal"]) .card .price { font-size: min(2.1rem, 2.1vw); white-space: nowrap; }
+  /* Juros: compactos, valor e variação na mesma linha. */
+  html:not([data-mode="normal"]) .rate {
+    display: grid; grid-template-columns: auto minmax(0, 1fr); align-content: center;
+    column-gap: 1vw; row-gap: 0.3vh; padding: 1vh 1.2vw;
+  }
+  html:not([data-mode="normal"]) .rate .head { grid-column: 1 / -1; }
+  html:not([data-mode="normal"]) .rate .value { font-size: 1.7rem; line-height: 1.2; }
+  html:not([data-mode="normal"]) .rate > .meta { align-self: center; }
+  html:not([data-mode="normal"]) .rate .src { display: none; }
+  html:not([data-mode="normal"]) .src { font-size: 0.85rem; }
+  /* O gráfico se estica para caber na célula; o ponto final ficaria achatado. */
+  html:not([data-mode="normal"]) svg circle { display: none; }
+}

@@ -34,7 +34,9 @@ cada fonte é consultada no máximo no ritmo descrito em "Frequência de atualiz
 
 **Opções no link** (podem ser combinadas: `?modo=tv&tema=escuro`)
 - `?tema=escuro` ou `?tema=claro` força o tema (por padrão segue o sistema).
-- `?modo=tv` encaixa tudo numa tela só, sem rolagem, para TVs e telões em paisagem (ex.: 1920×1080).
+- Em telas largas e deitadas (a partir de 1280 px, proporção 3:2 ou mais larga, como TVs 1920×1080),
+  o painel encaixa tudo numa tela só, sem rolagem, automaticamente.
+- `?modo=tv` força esse layout em qualquer tela; `?modo=normal` força o layout com rolagem.
 
 **Armazenamento (recomendado):** ligue um Upstash Redis grátis ao projeto na Vercel
 (**Storage → Create Database → Upstash for Redis → Connect Project**) e faça um **Redeploy**.
